@@ -1,0 +1,346 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="Western Events Center | Provo's Authentic Western Venue"
+  description="Host your next event in Provo's authentic western venue. Pro sound, oversized dance floor, western decor, and photo-ready props. Weekday and weekend packages available."
+>
+  <link rel="preload" as="image" href="/images/wec-hero.jpg" slot="preload" />
+
+  <script type="application/ld+json" slot="schema">
+  {
+    "@context": "https://schema.org",
+    "@type": "EventVenue",
+    "name": "Western Events Center",
+    "url": "https://www.westerneventscenter.com",
+    "telephone": "+1-385-204-3140",
+    "email": "westerneventscenter@gmail.com",
+    "description": "Host your next event full of dancing and celebration in Provo's authentic western venue.",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "1200 Towne Centre Blvd, Suite 1130",
+      "addressLocality": "Provo",
+      "addressRegion": "UT",
+      "postalCode": "84601",
+      "addressCountry": "US"
+    },
+    "priceRange": "$500-$2800"
+  }
+  </script>
+
+  <!-- HERO -->
+  <section
+    id="home"
+    class="relative min-h-screen flex items-center justify-center text-center scroll-mt-16"
+    style="background-image: url('/images/wec-hero.jpg'); background-size: cover; background-position: center;"
+  >
+    <div class="absolute inset-0" style="background: linear-gradient(to bottom, rgba(19,6,6,0.55) 0%, rgba(19,6,6,0.45) 45%, rgba(19,6,6,0.78) 100%);"></div>
+    <div class="relative z-10 max-w-4xl mx-auto px-6 pt-24 pb-16">
+      <p class="text-wec-red font-semibold text-sm tracking-[0.25em] uppercase mb-5">Provo, Utah</p>
+      <h1 class="font-display text-5xl sm:text-6xl lg:text-7xl text-wec-cream leading-tight mb-6">
+        Western Events Center
+      </h1>
+      <p class="text-wec-text/80 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
+        Host your next event full of dancing and celebration in our authentic western venue.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="#contact"
+          class="px-8 py-4 bg-wec-red text-wec-cream font-bold text-sm tracking-widest uppercase hover:bg-wec-red-hover transition-colors duration-200">
+          Schedule Your Tour
+        </a>
+        <a href="#pricing"
+          class="px-8 py-4 border border-wec-cream/60 text-wec-cream font-semibold text-sm tracking-widest uppercase hover:border-wec-cream hover:bg-wec-cream/10 transition-all duration-200">
+          View Pricing
+        </a>
+      </div>
+    </div>
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 opacity-60">
+      <svg class="w-6 h-6 text-wec-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- CORE FEATURES -->
+  <section id="service" class="relative py-20 lg:py-28 bg-wec-dark scroll-mt-16">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-14">
+        <p class="text-wec-red font-semibold text-sm tracking-[0.25em] uppercase mb-3">What's Included</p>
+        <h2 class="font-display text-4xl lg:text-5xl text-wec-cream">Our Core Features</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        {[
+          {
+            title: 'Pro Sound System',
+            desc: 'Installed professional-grade audio setup for crystal clear music throughout the venue.',
+            icon: 'M9 19V6l12-3v13M9 19a3 3 0 11-6 0 3 3 0 016 0zm12-3a3 3 0 11-6 0 3 3 0 016 0z',
+          },
+          {
+            title: 'Wireless Mics',
+            desc: 'High-quality wireless microphones for speeches, announcements, and presentations.',
+            icon: 'M19 11a7 7 0 01-14 0m7 7v3m-4 0h8M12 15a3 3 0 003-3V6a3 3 0 00-6 0v6a3 3 0 003 3z',
+          },
+          {
+            title: 'Dance Floor',
+            desc: 'Our oversized hardwood floor is perfect for swing dancing, line dancing, and more.',
+            icon: 'M4 6h16M4 12h16M4 18h16',
+          },
+          {
+            title: 'Western Decor',
+            desc: 'Authentic rustic details and western styling for a true country atmosphere.',
+            icon: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z',
+          },
+          {
+            title: 'Photoshoot Props',
+            desc: 'Themed backdrops and western props available for memorable guest photos.',
+            icon: 'M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9zm9 3a3 3 0 100 6 3 3 0 000-6z',
+          },
+          {
+            title: 'Roping Dummies',
+            desc: 'Interactive western entertainment that keeps guests of all ages engaged.',
+            icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+          },
+        ].map(({ title, desc, icon }) => (
+          <div class="bg-wec-maroon p-8 shadow-lg shadow-black/30">
+            <div class="w-12 h-12 rounded-full bg-wec-cream/10 flex items-center justify-center mb-5">
+              <svg class="w-6 h-6 text-wec-cream" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d={icon}/>
+              </svg>
+            </div>
+            <h3 class="font-display text-xl text-wec-cream mb-2">{title}</h3>
+            <p class="text-wec-text/75 text-sm leading-relaxed">{desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY -->
+  <section
+    id="gallery"
+    class="relative py-20 lg:py-28 scroll-mt-16"
+    style="background-image: url('/images/wec-wood-dark.jpg'); background-size: cover; background-position: center;"
+  >
+    <div class="absolute inset-0 bg-wec-dark/80 pointer-events-none"></div>
+    <div class="relative max-w-7xl mx-auto px-6">
+      <div class="text-center mb-14">
+        <p class="text-wec-red font-semibold text-sm tracking-[0.25em] uppercase mb-3">Take a Look</p>
+        <h2 class="font-display text-4xl lg:text-5xl text-wec-cream">See Our Venue</h2>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {[
+          { src: '/images/wec-full-room.jpg', alt: 'Wide view of Western Events Center hall with string lights and neon signs' },
+          { src: '/images/wec-pool-table.jpg', alt: 'Pool table with American flag backdrop on the dance floor' },
+          { src: '/images/wec-flag-floor.jpg', alt: 'Large American flag lit above the empty hardwood dance floor' },
+          { src: '/images/wec-lounge-1.jpg', alt: 'Lounge seating area with red barstools and The Barn sign' },
+          { src: '/images/wec-rope.jpg', alt: 'Western lasso rope tied to a wood post' },
+          { src: '/images/wec-lounge-2.jpg', alt: 'Booth seating and pool tables inside the venue' },
+        ].map(({ src, alt }) => (
+          <div class="overflow-hidden aspect-square bg-wec-warm">
+            <img src={src} alt={alt} class="w-full h-full object-cover" loading="lazy" />
+          </div>
+        ))}
+      </div>
+
+      <div class="text-center mt-12">
+        <a href="#contact"
+          class="inline-block px-8 py-4 bg-wec-red text-wec-cream font-bold text-sm tracking-widest uppercase hover:bg-wec-red-hover transition-colors duration-200">
+          Schedule Your Tour
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section
+    id="pricing"
+    class="relative py-20 lg:py-28 scroll-mt-16"
+    style="background-image: url('/images/wec-wood-red.jpg'); background-size: cover; background-position: center;"
+  >
+    <div class="absolute inset-0 bg-wec-maroon/90 pointer-events-none"></div>
+    <div class="relative max-w-7xl mx-auto px-6">
+      <div class="text-center mb-14">
+        <p class="text-wec-cream/70 font-semibold text-sm tracking-[0.25em] uppercase mb-3">Book Your Date</p>
+        <h2 class="font-display text-4xl lg:text-5xl text-wec-cream">Pricing</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {[
+          { badge: null, day: 'Tue to Thurs', name: 'Mid-Week Half Day', hours: '6 Hours', price: '$500' },
+          { badge: null, day: 'Tue to Thurs', name: 'Mid-Week Full Day', hours: '12 Hours', price: '$900' },
+          { badge: 'Most Popular', day: 'Saturday', name: 'Weekend Half Day', hours: '6 Hours', price: '$1500' },
+          { badge: null, day: 'Saturday', name: 'Weekend Full Day', hours: '12 Hours', price: '$2800' },
+        ].map(({ badge, day, name, hours, price }) => (
+          <div class:list={[
+            'relative flex flex-col p-8 border',
+            badge ? 'bg-wec-cream text-wec-dark border-wec-cream md:-mt-4' : 'bg-wec-dark/60 border-wec-cream/20 text-wec-cream',
+          ]}>
+            {badge && (
+              <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-wec-red text-wec-cream text-xs font-bold tracking-widest uppercase px-4 py-1.5">
+                {badge}
+              </span>
+            )}
+            <p class:list={['text-xs font-semibold tracking-[0.2em] uppercase mb-2 mt-2', badge ? 'text-wec-red' : 'text-wec-red']}>{day}</p>
+            <h3 class="font-display text-xl mb-1">{name}</h3>
+            <p class:list={['text-sm mb-6', badge ? 'text-wec-dark/60' : 'text-wec-text/60']}>{hours}</p>
+            <p class="font-display text-4xl mb-6">{price}</p>
+            <ul class="space-y-2 mb-8 flex-1 text-sm">
+              {['Hall Access', 'Sound System Access', 'Wireless Microphones', 'Dance Floor', 'Dance Lighting'].map((item) => (
+                <li class="flex gap-2 items-center">
+                  <svg class:list={['w-4 h-4 shrink-0', badge ? 'text-wec-red' : 'text-wec-red']} fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                  </svg>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <a href="#contact"
+              class:list={[
+                'text-center py-3 text-xs font-bold tracking-widest uppercase transition-all duration-200',
+                badge ? 'bg-wec-red text-wec-cream hover:bg-wec-red-hover' : 'border border-wec-red/60 text-wec-red hover:bg-wec-red hover:text-wec-cream',
+              ]}>
+              Schedule
+            </a>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ENHANCE YOUR EXPERIENCE -->
+  <section class="py-20 lg:py-28 bg-wec-dark">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-14">
+        <p class="text-wec-red font-semibold text-sm tracking-[0.25em] uppercase mb-3">Add-Ons</p>
+        <h2 class="font-display text-4xl lg:text-5xl text-wec-cream">Enhance Your Experience</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 lg:gap-8">
+        {[
+          { src: '/images/wec-bull.jpg', alt: 'Mechanical bull with brown and black hide on red padded platform', title: 'Mechanical Bull', desc: 'Add excitement with our professional mechanical bull. Includes operator and safety mats.' },
+          { src: '/images/wec-dancers.jpg', alt: 'Dance instructors teaching a couple to swing dance', title: 'Dance Instructors', desc: 'Professional instructors to teach your guests country swing, partner, and line dancing.' },
+          { src: '/images/wec-soda-bar.jpg', alt: 'Soda bar with Coca-Cola, Dr Pepper, Red Bull, and Monster Energy cans', title: 'Soda Bar', desc: 'Full service non-alcoholic bar with premium sodas, lemonades, and energy drinks.' },
+        ].map(({ src, alt, title, desc }) => (
+          <div class="group">
+            <div class="overflow-hidden aspect-[4/3] mb-5">
+              <img src={src} alt={alt} class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300" loading="lazy" />
+            </div>
+            <h3 class="font-display text-2xl text-wec-cream mb-2">{title}</h3>
+            <p class="text-wec-text/70 text-sm leading-relaxed mb-5">{desc}</p>
+            <a href="#contact" class="inline-block py-3 px-6 border border-wec-red/60 text-wec-red text-xs font-semibold tracking-widest uppercase hover:bg-wec-red hover:text-wec-cream transition-all duration-200">
+              Schedule
+            </a>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT / SCHEDULE A TOUR -->
+  <section id="contact" class="relative py-20 lg:py-28 scroll-mt-16 bg-wec-maroon">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-14">
+        <p class="text-wec-cream/70 font-semibold text-sm tracking-[0.25em] uppercase mb-3">Get in Touch</p>
+        <h2 class="font-display text-4xl lg:text-5xl text-wec-cream">Schedule a Tour</h2>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-10">
+        <!-- Form -->
+        <form class="lg:col-span-3 bg-wec-cream p-8 sm:p-10 flex flex-col gap-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-wec-dark text-xs font-semibold tracking-widest uppercase mb-2" for="first-name">First Name *</label>
+              <input id="first-name" name="first-name" type="text" required class="w-full px-4 py-3 bg-wec-red/10 border border-wec-red/30 text-wec-dark placeholder:text-wec-dark/40 focus:outline-none focus:border-wec-red" />
+            </div>
+            <div>
+              <label class="block text-wec-dark text-xs font-semibold tracking-widest uppercase mb-2" for="last-name">Last Name *</label>
+              <input id="last-name" name="last-name" type="text" required class="w-full px-4 py-3 bg-wec-red/10 border border-wec-red/30 text-wec-dark placeholder:text-wec-dark/40 focus:outline-none focus:border-wec-red" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-wec-dark text-xs font-semibold tracking-widest uppercase mb-2" for="phone">Phone *</label>
+              <input id="phone" name="phone" type="tel" required class="w-full px-4 py-3 bg-wec-red/10 border border-wec-red/30 text-wec-dark placeholder:text-wec-dark/40 focus:outline-none focus:border-wec-red" />
+            </div>
+            <div>
+              <label class="block text-wec-dark text-xs font-semibold tracking-widest uppercase mb-2" for="email">Email *</label>
+              <input id="email" name="email" type="email" required class="w-full px-4 py-3 bg-wec-red/10 border border-wec-red/30 text-wec-dark placeholder:text-wec-dark/40 focus:outline-none focus:border-wec-red" />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-wec-dark text-xs font-semibold tracking-widest uppercase mb-2" for="event-date">Preferred Event Date *</label>
+              <input id="event-date" name="event-date" type="date" required class="w-full px-4 py-3 bg-wec-red/10 border border-wec-red/30 text-wec-dark focus:outline-none focus:border-wec-red" />
+            </div>
+            <div>
+              <label class="block text-wec-dark text-xs font-semibold tracking-widest uppercase mb-2" for="tour-days">Preferred Tour Days *</label>
+              <input id="tour-days" name="tour-days" type="text" required placeholder="e.g. Weekday afternoons" class="w-full px-4 py-3 bg-wec-red/10 border border-wec-red/30 text-wec-dark placeholder:text-wec-dark/40 focus:outline-none focus:border-wec-red" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-wec-dark text-xs font-semibold tracking-widest uppercase mb-2" for="event-details">Tell Us About Your Event *</label>
+            <textarea id="event-details" name="event-details" rows="4" required class="w-full px-4 py-3 bg-wec-red/10 border border-wec-red/30 text-wec-dark placeholder:text-wec-dark/40 focus:outline-none focus:border-wec-red resize-none"></textarea>
+          </div>
+          <div>
+            <p class="text-wec-dark text-xs font-semibold tracking-widest uppercase mb-3">I'm Interested in Adding:</p>
+            <div class="flex flex-wrap gap-6">
+              <label class="flex items-center gap-2 text-wec-dark text-sm">
+                <input type="checkbox" name="addon" value="Mechanical Bull" class="accent-wec-red w-4 h-4" /> Mechanical Bull
+              </label>
+              <label class="flex items-center gap-2 text-wec-dark text-sm">
+                <input type="checkbox" name="addon" value="Dance Instructors" class="accent-wec-red w-4 h-4" /> Dance Instructors
+              </label>
+              <label class="flex items-center gap-2 text-wec-dark text-sm">
+                <input type="checkbox" name="addon" value="Soda Bar" class="accent-wec-red w-4 h-4" /> Soda Bar
+              </label>
+            </div>
+          </div>
+          <button type="submit" class="mt-2 py-4 bg-wec-red text-wec-cream font-bold text-sm tracking-widest uppercase hover:bg-wec-red-hover transition-colors duration-200">
+            Submit
+          </button>
+        </form>
+
+        <!-- Contact info + map -->
+        <div class="lg:col-span-2 flex flex-col gap-6">
+          <div class="bg-wec-dark/40 border border-wec-cream/15 p-8">
+            <h3 class="font-display text-2xl text-wec-cream mb-5">Visit Us</h3>
+            <ul class="space-y-4 text-sm text-wec-text/80">
+              <li class="flex gap-3">
+                <svg class="w-5 h-5 mt-0.5 text-wec-red shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span>1200 Towne Centre Blvd, Suite 1130<br />Provo, UT 84601</span>
+              </li>
+              <li class="flex gap-3">
+                <svg class="w-5 h-5 mt-0.5 text-wec-red shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                </svg>
+                <a href="tel:3852043140" class="hover:text-wec-red transition-colors">(385) 204-3140</a>
+              </li>
+              <li class="flex gap-3">
+                <svg class="w-5 h-5 mt-0.5 text-wec-red shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                <a href="mailto:westerneventscenter@gmail.com" class="hover:text-wec-red transition-colors">westerneventscenter@gmail.com</a>
+              </li>
+            </ul>
+          </div>
+          <div class="flex-1 min-h-[260px] overflow-hidden border border-wec-cream/15">
+            <iframe
+              title="Western Events Center location map"
+              src="https://www.google.com/maps?q=1200+Towne+Centre+Blvd+Suite+1130,+Provo,+UT+84601&output=embed"
+              class="w-full h-full min-h-[260px] grayscale contrast-125"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+            ></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</Layout>
