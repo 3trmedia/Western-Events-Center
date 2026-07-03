@@ -1,35 +1,37 @@
 ---
 ---
 
-<div id="avail-calendar-simple" class="max-w-4xl mx-auto">
+<div id="avail-calendar-detailed" class="max-w-4xl mx-auto">
   <div class="flex items-center justify-between mb-8">
-    <button id="avail-prev" aria-label="Previous month" class="w-11 h-11 flex items-center justify-center border border-wec-cream/20 text-wec-cream hover:border-wec-red hover:text-wec-red transition-colors">
+    <button id="avail-d-prev" aria-label="Previous month" class="w-11 h-11 flex items-center justify-center border border-wec-cream/20 text-wec-cream hover:border-wec-red hover:text-wec-red transition-colors">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
     </button>
-    <h3 id="avail-month-label" class="font-display text-3xl sm:text-4xl text-wec-cream"></h3>
-    <button id="avail-next" aria-label="Next month" class="w-11 h-11 flex items-center justify-center border border-wec-cream/20 text-wec-cream hover:border-wec-red hover:text-wec-red transition-colors">
+    <h3 id="avail-d-month-label" class="font-display text-3xl sm:text-4xl text-wec-cream"></h3>
+    <button id="avail-d-next" aria-label="Next month" class="w-11 h-11 flex items-center justify-center border border-wec-cream/20 text-wec-cream hover:border-wec-red hover:text-wec-red transition-colors">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
     </button>
   </div>
-  <div id="avail-grid" class="grid grid-cols-7 gap-2 sm:gap-3">
+  <div id="avail-d-grid" class="grid grid-cols-7 gap-2 sm:gap-3">
     <p class="col-span-7 text-center text-wec-text/60 text-sm py-12">Loading availability&hellip;</p>
-  </div>
-  <div class="flex items-center justify-center gap-6 mt-8 text-xs text-wec-text/60">
-    <span class="flex items-center gap-2"><span class="w-3 h-3 bg-wec-warm border border-wec-cream/20"></span> Open</span>
-    <span class="flex items-center gap-2"><span class="w-3 h-3 bg-wec-red/70"></span> Booked</span>
   </div>
 </div>
 
 <script>
-  function initSimpleCalendar() {
-    const root = document.getElementById('avail-calendar-simple');
+  function escapeHtml(str: string) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function initDetailedCalendar() {
+    const root = document.getElementById('avail-calendar-detailed');
     if (!root || root.dataset.initialized === 'true') return;
     root.dataset.initialized = 'true';
 
-    const grid = root.querySelector('#avail-grid');
-    const label = root.querySelector('#avail-month-label');
-    const prevBtn = root.querySelector('#avail-prev');
-    const nextBtn = root.querySelector('#avail-next');
+    const grid = root.querySelector('#avail-d-grid');
+    const label = root.querySelector('#avail-d-month-label');
+    const prevBtn = root.querySelector('#avail-d-prev');
+    const nextBtn = root.querySelector('#avail-d-next');
 
     const today = new Date();
     let viewYear = today.getFullYear();
@@ -46,11 +48,13 @@
       grid.innerHTML = '<p class="col-span-7 text-center text-wec-text/60 text-sm py-12">Loading availability&hellip;</p>';
 
       try {
-        const res = await fetch(`/api/availability?year=${viewYear}&month=${viewMonth + 1}`);
+        const res = await fetch(`/api/availability-detailed?year=${viewYear}&month=${viewMonth + 1}`);
         if (!res.ok) throw new Error('bad response');
         const { days } = await res.json();
 
-        const byDate = new Map(days.map((d: { date: string; booked: boolean }) => [d.date, d.booked]));
+        const byDate = new Map(
+          days.map((d: { date: string; events: { title: string; time: string }[] }) => [d.date, d.events])
+        );
 
         const firstOfMonth = new Date(viewYear, viewMonth, 1);
         const lastOfMonth = new Date(viewYear, viewMonth + 1, 0);
@@ -69,20 +73,31 @@
         while (cursor <= gridEnd) {
           const key = cursor.toISOString().slice(0, 10);
           const inMonth = cursor.getMonth() === viewMonth;
-          const booked = byDate.get(key);
+          const events = (byDate.get(key) as { title: string; time: string }[] | undefined) || [];
           const isToday = key === todayKey;
           const dayNum = cursor.getDate();
 
           if (!inMonth) {
-            cells.push(`<div class="aspect-square"></div>`);
+            cells.push(`<div class="min-h-[6rem] sm:min-h-[7rem]"></div>`);
           } else {
             const ring = isToday ? ' ring-2 ring-wec-cream/70' : '';
-            const base = 'aspect-square flex items-center justify-center text-lg sm:text-2xl font-semibold transition-colors';
-            if (booked) {
-              cells.push(`<div class="${base} bg-wec-red/70 text-wec-cream${ring}" title="Booked">${dayNum}</div>`);
-            } else {
-              cells.push(`<div class="${base} bg-wec-warm border border-wec-cream/10 text-wec-text${ring}" title="Open">${dayNum}</div>`);
-            }
+            const hasEvents = events.length > 0;
+            const bg = hasEvents ? 'bg-wec-red/15 border border-wec-red/40' : 'bg-wec-warm border border-wec-cream/10';
+            const chips = events
+              .map((e) => {
+                const title = escapeHtml(e.title);
+                const time = escapeHtml(e.time);
+                return `<div class="text-[10px] sm:text-xs leading-tight bg-wec-red/70 text-wec-cream px-1.5 py-1 mb-1 truncate" title="${title} — ${time}">
+                  <span class="font-semibold">${title}</span><br /><span class="opacity-80">${time}</span>
+                </div>`;
+              })
+              .join('');
+            cells.push(
+              `<div class="min-h-[6rem] sm:min-h-[7rem] p-1.5 sm:p-2 flex flex-col ${bg}${ring}">
+                <span class="text-sm sm:text-lg font-semibold text-wec-text mb-1">${dayNum}</span>
+                <div class="flex-1 overflow-hidden">${chips}</div>
+              </div>`
+            );
           }
           cursor.setDate(cursor.getDate() + 1);
         }
@@ -113,6 +128,6 @@
     render();
   }
 
-  initSimpleCalendar();
-  document.addEventListener('astro:page-load', initSimpleCalendar);
+  initDetailedCalendar();
+  document.addEventListener('astro:page-load', initDetailedCalendar);
 </script>
