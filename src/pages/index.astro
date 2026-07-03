@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import AvailabilityCalendar from '../components/AvailabilityCalendar.astro';
 import DetailedAvailabilityCalendar from '../components/DetailedAvailabilityCalendar.astro';
 ---
 
@@ -213,22 +212,10 @@ import DetailedAvailabilityCalendar from '../components/DetailedAvailabilityCale
   </section>
 
   <!-- AVAILABILITY -->
-  <section class="py-20 lg:py-28 bg-wec-dark">
-    <div class="max-w-7xl mx-auto px-6">
-      <div class="text-center mb-14">
-        <p class="text-wec-red font-semibold text-sm tracking-[0.25em] uppercase mb-3">Design A — Status Only</p>
-        <h2 class="font-display text-4xl lg:text-5xl text-wec-cream mb-4">Check Availability</h2>
-        <p class="text-wec-text/60 max-w-xl mx-auto">See what's open before you reach out. Booked days are shown in red.</p>
-      </div>
-      <AvailabilityCalendar />
-    </div>
-  </section>
-
-  <!-- AVAILABILITY (DETAILED VARIANT) -->
   <section class="py-20 lg:py-28 bg-wec-mid">
     <div class="max-w-7xl mx-auto px-6">
       <div class="text-center mb-14">
-        <p class="text-wec-red font-semibold text-sm tracking-[0.25em] uppercase mb-3">Design B — With Event Details</p>
+        <p class="text-wec-red font-semibold text-sm tracking-[0.25em] uppercase mb-3">Next Available Dates</p>
         <h2 class="font-display text-4xl lg:text-5xl text-wec-cream mb-4">Check Availability</h2>
         <p class="text-wec-text/60 max-w-xl mx-auto">See exactly what's booked and when, so a single reservation doesn't block out your whole date.</p>
       </div>
@@ -250,13 +237,13 @@ import DetailedAvailabilityCalendar from '../components/DetailedAvailabilityCale
           { src: '/images/wec-dancers.jpg', alt: 'Dance instructors teaching a couple to swing dance', title: 'Dance Instructors', desc: 'Professional instructors to teach your guests country swing, partner, and line dancing.' },
           { src: '/images/wec-soda-bar.jpg', alt: 'Soda bar with Coca-Cola, Dr Pepper, Red Bull, and Monster Energy cans', title: 'Soda Bar', desc: 'Full service non-alcoholic bar with premium sodas, lemonades, and energy drinks.' },
         ].map(({ src, alt, title, desc }) => (
-          <div class="group">
+          <div class="bg-wec-red p-5 sm:p-6 shadow-lg shadow-black/40">
             <div class="overflow-hidden aspect-[4/3] mb-5">
-              <img src={src} alt={alt} class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300" loading="lazy" />
+              <img src={src} alt={alt} class="w-full h-full object-cover" loading="lazy" />
             </div>
             <h3 class="font-display text-2xl text-wec-cream mb-2">{title}</h3>
-            <p class="text-wec-text/70 text-sm leading-relaxed mb-5">{desc}</p>
-            <a href="#contact" class="inline-block py-3 px-6 border border-wec-red/60 text-wec-red text-xs font-semibold tracking-widest uppercase hover:bg-wec-red hover:text-wec-cream transition-all duration-200">
+            <p class="text-wec-cream/85 text-sm leading-relaxed mb-5">{desc}</p>
+            <a href="#contact" class="inline-block py-3 px-6 bg-wec-cream text-wec-red text-xs font-bold tracking-widest uppercase hover:bg-white transition-colors duration-200">
               Schedule
             </a>
           </div>

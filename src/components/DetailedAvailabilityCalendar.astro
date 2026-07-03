@@ -14,7 +14,7 @@
   <div id="avail-d-grid" class="grid grid-cols-7 gap-1.5 sm:gap-3">
     <p class="col-span-7 text-center text-wec-text/60 text-sm py-12">Loading availability&hellip;</p>
   </div>
-  <p class="text-center text-wec-text/40 text-xs mt-6 sm:hidden">Tap a day to see what's booked.</p>
+  <p class="text-center text-wec-text/40 text-xs mt-6">Click a day to see what's booked.</p>
 </div>
 
 <!-- Shared modal: shows either a single event's full details or a day's full agenda -->
@@ -191,9 +191,15 @@
           const isToday = key === todayKey;
           const ring = isToday ? ' ring-2 ring-wec-cream/70' : '';
           const hasEvents = events.length > 0;
-          const bg = hasEvents ? 'bg-wec-red/15 border border-wec-red/40' : 'bg-wec-warm border border-wec-cream/10';
+          const bg = hasEvents
+            ? 'bg-wec-red/15 border border-wec-red/40 cursor-pointer hover:bg-wec-red/25'
+            : 'bg-wec-warm border border-wec-cream/10';
 
-          // Desktop/tablet: up to 2 chips, 3rd+ collapses into a "•••" overflow box.
+          // Up to 2 chips shown directly; 3rd+ collapses into a "•••" indicator.
+          // Clicking ANYWHERE in a day with events (the cell itself, via
+          // delegation below) opens the full day agenda when there's more
+          // than one event — individual chips still jump straight to that
+          // one event's detail.
           const visibleEvents = events.slice(0, 2);
           const overflowCount = events.length - visibleEvents.length;
           const chips = visibleEvents
@@ -209,34 +215,35 @@
             `
             )
             .join('');
-          const overflowBtn =
+          const overflowIndicator =
             overflowCount > 0
-              ? `<button data-day-key="${key}" class="avail-d-agenda-btn hidden sm:flex w-full items-center justify-center gap-1 bg-wec-dark/60 hover:bg-wec-red/40 text-wec-cream text-[11px] py-1 transition-colors" aria-label="${overflowCount} more events">
+              ? `<div class="hidden sm:flex w-full items-center justify-center gap-1 bg-wec-dark/60 text-wec-cream text-[11px] py-1">
                    <span aria-hidden="true">&bull;&bull;&bull;</span><span>+${overflowCount}</span>
-                 </button>`
+                 </div>`
               : '';
 
-          // Mobile: compact dot indicators (max 3 dots). A transparent button
-          // covers the whole cell (mobile only) so tapping anywhere on the day
-          // opens the agenda — no need to hit a tiny chip on a small screen.
+          // Mobile: compact dot indicators (max 3 dots) instead of unreadable chip text.
           const dotCount = Math.min(events.length, 3);
           const mobileDots = hasEvents
             ? `<div class="flex sm:hidden gap-0.5 mt-1">${Array.from({ length: dotCount })
                 .map(() => `<span class="w-1.5 h-1.5 rounded-full bg-wec-red"></span>`)
                 .join('')}</div>`
             : '';
-          const mobileTapTarget = hasEvents
-            ? `<button data-day-key="${key}" class="avail-d-agenda-btn sm:hidden absolute inset-0 w-full h-full" aria-label="${events.length} events"></button>`
+
+          // A <div role="button"> here, not a real <button> — the cell contains
+          // nested chip <button>s, and a <button> cannot legally contain another
+          // <button> (browsers will silently mis-parse it).
+          const cellExtraAttrs = hasEvents
+            ? `role="button" tabindex="0" data-day-key="${key}" aria-label="${events.length} event${events.length === 1 ? '' : 's'} on ${escapeHtml(events[0].dateLabel)}"`
             : '';
 
           cells.push(
-            `<div class="${cellClass} relative p-1 sm:p-2 flex flex-col ${bg}${ring}">
+            `<div class="avail-d-day-cell ${cellClass} relative p-1 sm:p-2 flex flex-col text-left ${bg}${ring}" ${cellExtraAttrs}>
               <div class="flex flex-col items-center sm:items-start">
                 <span class="text-xs sm:text-lg font-semibold text-wec-text">${day}</span>
                 ${mobileDots}
               </div>
-              <div class="hidden sm:block flex-1 overflow-hidden mt-1">${chips}${overflowBtn}</div>
-              ${mobileTapTarget}
+              <div class="hidden sm:block flex-1 overflow-hidden mt-1">${chips}${overflowIndicator}</div>
             </div>`
           );
         }
@@ -249,6 +256,7 @@
 
         grid.innerHTML = cells.join('');
 
+        // Chip clicks jump straight to that one event.
         grid.querySelectorAll<HTMLButtonElement>('.avail-d-event-btn').forEach((btn) => {
           btn.addEventListener('click', (ev) => {
             ev.stopPropagation();
@@ -261,18 +269,28 @@
             bindModalContentHandlers();
           });
         });
-        grid.querySelectorAll<HTMLButtonElement>('.avail-d-agenda-btn').forEach((btn) => {
-          btn.addEventListener('click', (ev) => {
-            ev.stopPropagation();
-            const dayKey = btn.dataset.dayKey || '';
-            const events = dayEventsCache.get(dayKey) || [];
-            if (events.length === 0) return;
-            if (events.length === 1) {
-              openModal(eventDetailHtml(events[0], null));
-            } else {
-              openModal(dayAgendaHtml(dayKey, events));
+
+        // Clicking (or Enter/Space-ing, since these are role="button" divs)
+        // the day cell itself opens the full agenda, or the single event
+        // directly if there's only one.
+        const openDayFromCell = (cell: HTMLElement) => {
+          const dayKey = cell.dataset.dayKey || '';
+          const events = dayEventsCache.get(dayKey) || [];
+          if (events.length === 0) return;
+          if (events.length === 1) {
+            openModal(eventDetailHtml(events[0], null));
+          } else {
+            openModal(dayAgendaHtml(dayKey, events));
+          }
+          bindModalContentHandlers();
+        };
+        grid.querySelectorAll<HTMLElement>('.avail-d-day-cell').forEach((cell) => {
+          cell.addEventListener('click', () => openDayFromCell(cell));
+          cell.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter' || ev.key === ' ') {
+              ev.preventDefault();
+              openDayFromCell(cell);
             }
-            bindModalContentHandlers();
           });
         });
       } catch {
