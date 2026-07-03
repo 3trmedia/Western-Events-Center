@@ -1,6 +1,12 @@
 import type { APIRoute } from 'astro';
 import ical from 'node-ical';
-import { dateKeyInVenueTZ, daysInMonth, formatTimeInVenueTZ, ymd } from '../../lib/calendar-dates';
+import {
+  dateKeyInVenueTZ,
+  daysInMonth,
+  formatFullDateInVenueTZ,
+  formatTimeInVenueTZ,
+  ymd,
+} from '../../lib/calendar-dates';
 
 export const prerender = false;
 
@@ -8,13 +14,18 @@ export const prerender = false;
 // Never hardcode it here — the URL contains a secret token that grants read access
 // to the calendar's private event data.
 //
-// Unlike /api/availability, this endpoint DOES expose event titles and times.
-// Only use it with calendars where event titles are safe to show publicly
-// (event categories like "Wedding" or "Corporate Event"), not calendars where
-// titles contain renter names or other private details.
+// Unlike /api/availability, this endpoint DOES expose event titles, times, and
+// descriptions. Only use it with calendars where that content is safe to show
+// publicly (event categories like "Wedding" or "Corporate Event"), not calendars
+// where titles/descriptions contain renter names or other private details.
 const CALENDAR_ICS_URL = import.meta.env.AVAILABILITY_ICS_URL;
 
-type DayEvent = { title: string; time: string };
+type DayEvent = {
+  title: string;
+  time: string;
+  description: string | null;
+  dateLabel: string;
+};
 
 export const GET: APIRoute = async ({ url }) => {
   if (!CALENDAR_ICS_URL) {
@@ -41,7 +52,13 @@ export const GET: APIRoute = async ({ url }) => {
 
     const eventsByDate = new Map<string, DayEvent[]>();
 
-    const addEvent = (start: Date, title: string, end: Date | null, allDay: boolean) => {
+    const addEvent = (
+      start: Date,
+      title: string,
+      end: Date | null,
+      allDay: boolean,
+      description: string | null
+    ) => {
       const dateKey = dateKeyInVenueTZ(start);
       if (!dateKey.startsWith(monthPrefix)) return;
 
@@ -52,7 +69,12 @@ export const GET: APIRoute = async ({ url }) => {
           : formatTimeInVenueTZ(start);
 
       if (!eventsByDate.has(dateKey)) eventsByDate.set(dateKey, []);
-      eventsByDate.get(dateKey)!.push({ title, time });
+      eventsByDate.get(dateKey)!.push({
+        title,
+        time,
+        description: description && description.trim() ? description.trim() : null,
+        dateLabel: formatFullDateInVenueTZ(start),
+      });
     };
 
     for (const key in data) {
@@ -60,6 +82,7 @@ export const GET: APIRoute = async ({ url }) => {
       if (event.type !== 'VEVENT') continue;
 
       const title = event.summary || 'Reserved';
+      const description = typeof event.description === 'string' ? event.description : null;
       const allDay = event.datetype === 'date';
 
       if (event.rrule) {
@@ -68,12 +91,12 @@ export const GET: APIRoute = async ({ url }) => {
           event.start && event.end ? new Date(event.end).getTime() - new Date(event.start).getTime() : 0;
         for (const occStart of occurrences) {
           const occEnd = duration ? new Date(occStart.getTime() + duration) : null;
-          addEvent(occStart, title, occEnd, allDay);
+          addEvent(occStart, title, occEnd, allDay, description);
         }
       } else if (event.start) {
         const start = new Date(event.start);
         const end = event.end ? new Date(event.end) : null;
-        addEvent(start, title, end, allDay);
+        addEvent(start, title, end, allDay, description);
       }
     }
 

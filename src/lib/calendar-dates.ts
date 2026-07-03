@@ -41,6 +41,17 @@ export function formatTimeInVenueTZ(date: Date): string {
   });
 }
 
+// Full date in the venue's timezone, e.g. "Thursday, July 2, 2026".
+export function formatFullDateInVenueTZ(date: Date): string {
+  return date.toLocaleDateString('en-US', {
+    timeZone: VENUE_TZ,
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 // Number of days in a given month (1-12), using pure UTC calendar math so
 // the result never depends on the server's local timezone.
 export function daysInMonth(year: number, month1to12: number): number {

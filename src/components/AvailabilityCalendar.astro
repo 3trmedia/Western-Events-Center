@@ -1,7 +1,7 @@
 ---
 ---
 
-<div id="avail-calendar-simple" class="max-w-4xl mx-auto">
+<div id="avail-calendar-simple" class="max-w-6xl mx-auto">
   <div class="flex items-center justify-between mb-8">
     <button id="avail-prev" aria-label="Previous month" class="w-11 h-11 flex items-center justify-center border border-wec-cream/20 text-wec-cream hover:border-wec-red hover:text-wec-red transition-colors">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -65,7 +65,7 @@
         );
 
         for (let i = 0; i < leading; i++) {
-          cells.push(`<div class="aspect-square"></div>`);
+          cells.push(`<div class="aspect-[10/7]"></div>`);
         }
 
         for (let day = 1; day <= numDays; day++) {
@@ -73,7 +73,7 @@
           const booked = byDate.get(key);
           const isToday = key === todayKey;
           const ring = isToday ? ' ring-2 ring-wec-cream/70' : '';
-          const base = 'aspect-square flex items-center justify-center text-lg sm:text-2xl font-semibold transition-colors';
+          const base = 'aspect-[10/7] flex items-center justify-center text-base sm:text-2xl font-semibold transition-colors';
           if (booked) {
             cells.push(`<div class="${base} bg-wec-red/70 text-wec-cream${ring}" title="Booked">${day}</div>`);
           } else {
@@ -85,7 +85,7 @@
         const totalCells = leading + numDays;
         const trailing = (7 - (totalCells % 7)) % 7;
         for (let i = 0; i < trailing; i++) {
-          cells.push(`<div class="aspect-square"></div>`);
+          cells.push(`<div class="aspect-[10/7]"></div>`);
         }
 
         grid.innerHTML = cells.join('');

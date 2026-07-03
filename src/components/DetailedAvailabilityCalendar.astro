@@ -1,7 +1,7 @@
 ---
 ---
 
-<div id="avail-calendar-detailed" class="max-w-4xl mx-auto">
+<div id="avail-calendar-detailed" class="max-w-6xl mx-auto">
   <div class="flex items-center justify-between mb-8">
     <button id="avail-d-prev" aria-label="Previous month" class="w-11 h-11 flex items-center justify-center border border-wec-cream/20 text-wec-cream hover:border-wec-red hover:text-wec-red transition-colors">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -11,13 +11,32 @@
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
     </button>
   </div>
-  <div id="avail-d-grid" class="grid grid-cols-7 gap-2 sm:gap-3">
+  <div id="avail-d-grid" class="grid grid-cols-7 gap-1.5 sm:gap-3">
     <p class="col-span-7 text-center text-wec-text/60 text-sm py-12">Loading availability&hellip;</p>
+  </div>
+  <p class="text-center text-wec-text/40 text-xs mt-6 sm:hidden">Tap a day to see what's booked.</p>
+</div>
+
+<!-- Shared modal: shows either a single event's full details or a day's full agenda -->
+<div id="avail-d-modal" class="fixed inset-0 z-[60] hidden items-end sm:items-center justify-center p-0 sm:p-6" aria-hidden="true">
+  <div id="avail-d-modal-backdrop" class="absolute inset-0 bg-black/70"></div>
+  <div
+    id="avail-d-modal-panel"
+    class="relative bg-wec-dark border border-wec-red/40 w-full sm:max-w-md sm:w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 rounded-t-2xl sm:rounded-none"
+    role="dialog"
+    aria-modal="true"
+  >
+    <button id="avail-d-modal-close" aria-label="Close" class="absolute top-4 right-4 w-9 h-9 flex items-center justify-center text-wec-text/60 hover:text-wec-red transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+    <div id="avail-d-modal-content"></div>
   </div>
 </div>
 
 <script>
   import { ymd, daysInMonth, firstWeekdayOfMonth, dateKeyInVenueTZ } from '../lib/calendar-dates';
+
+  type DayEvent = { title: string; time: string; description: string | null; dateLabel: string };
 
   function escapeHtml(str: string) {
     const div = document.createElement('div');
@@ -35,10 +54,105 @@
     const prevBtn = root.querySelector('#avail-d-prev');
     const nextBtn = root.querySelector('#avail-d-next');
 
+    const modal = document.getElementById('avail-d-modal');
+    const modalBackdrop = document.getElementById('avail-d-modal-backdrop');
+    const modalPanel = document.getElementById('avail-d-modal-panel');
+    const modalClose = document.getElementById('avail-d-modal-close');
+    const modalContent = document.getElementById('avail-d-modal-content');
+
     const todayKey = dateKeyInVenueTZ(new Date());
     const [todayYear, todayMonth] = todayKey.split('-').map(Number);
     let viewYear = todayYear;
     let viewMonth = todayMonth; // 1-12
+
+    let dayEventsCache = new Map<string, DayEvent[]>();
+
+    function openModal(html: string) {
+      if (!modal || !modalContent) return;
+      modalContent.innerHTML = html;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    function eventDetailHtml(e: DayEvent, backToKey: string | null): string {
+      const back = backToKey
+        ? `<button data-back-to="${escapeHtml(backToKey)}" class="avail-d-back-btn text-wec-red text-xs font-semibold tracking-widest uppercase mb-4 flex items-center gap-1 hover:text-wec-red-hover transition-colors">
+             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+             Back to day
+           </button>`
+        : '';
+      const description = e.description
+        ? `<p class="text-wec-text/80 text-sm leading-relaxed whitespace-pre-line mt-4">${escapeHtml(e.description)}</p>`
+        : '';
+      return `
+        ${back}
+        <p class="text-wec-red text-xs font-semibold tracking-[0.2em] uppercase mb-2">${escapeHtml(e.dateLabel)}</p>
+        <h4 class="font-display text-2xl text-wec-cream mb-2">${escapeHtml(e.title)}</h4>
+        <p class="text-wec-text/70 text-sm">${escapeHtml(e.time)}</p>
+        ${description}
+      `;
+    }
+
+    function dayAgendaHtml(dateKey: string, events: DayEvent[]): string {
+      const dateLabel = events[0]?.dateLabel || dateKey;
+      const items = events
+        .map(
+          (e, i) => `
+          <button
+            data-event-index="${i}"
+            data-day-key="${escapeHtml(dateKey)}"
+            class="avail-d-event-btn w-full text-left bg-wec-warm hover:bg-wec-red/30 border border-wec-cream/10 px-4 py-3 mb-2 transition-colors"
+          >
+            <span class="block text-wec-cream text-sm font-semibold">${escapeHtml(e.title)}</span>
+            <span class="block text-wec-text/60 text-xs mt-0.5">${escapeHtml(e.time)}</span>
+          </button>
+        `
+        )
+        .join('');
+      return `
+        <p class="text-wec-red text-xs font-semibold tracking-[0.2em] uppercase mb-2">${escapeHtml(dateLabel)}</p>
+        <h4 class="font-display text-2xl text-wec-cream mb-5">${events.length} Events</h4>
+        <div>${items}</div>
+      `;
+    }
+
+    function bindModalContentHandlers() {
+      modalContent?.querySelectorAll<HTMLButtonElement>('.avail-d-event-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const dayKey = btn.dataset.dayKey || '';
+          const idx = Number(btn.dataset.eventIndex);
+          const events = dayEventsCache.get(dayKey) || [];
+          const e = events[idx];
+          if (!e) return;
+          openModal(eventDetailHtml(e, events.length > 1 ? dayKey : null));
+          bindModalContentHandlers();
+        });
+      });
+      modalContent?.querySelectorAll<HTMLButtonElement>('.avail-d-back-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const dayKey = btn.dataset.backTo || '';
+          const events = dayEventsCache.get(dayKey) || [];
+          openModal(dayAgendaHtml(dayKey, events));
+          bindModalContentHandlers();
+        });
+      });
+    }
+
+    modalBackdrop?.addEventListener('click', closeModal);
+    modalClose?.addEventListener('click', closeModal);
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape') closeModal();
+    });
 
     async function render() {
       if (label) {
@@ -56,42 +170,73 @@
         if (!res.ok) throw new Error('bad response');
         const { days } = await res.json();
 
-        const byDate = new Map(
-          days.map((d: { date: string; events: { title: string; time: string }[] }) => [d.date, d.events])
-        );
+        dayEventsCache = new Map(days.map((d: { date: string; events: DayEvent[] }) => [d.date, d.events]));
 
         const leading = firstWeekdayOfMonth(viewYear, viewMonth);
         const numDays = daysInMonth(viewYear, viewMonth);
 
+        const cellClass = 'aspect-[10/7]';
         const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
         const cells: string[] = labels.map(
-          (l) => `<div class="text-center text-wec-muted text-sm font-semibold uppercase pb-2">${l}</div>`
+          (l) => `<div class="text-center text-wec-muted text-xs sm:text-sm font-semibold uppercase pb-1 sm:pb-2">${l}</div>`
         );
 
         for (let i = 0; i < leading; i++) {
-          cells.push(`<div class="min-h-[6rem] sm:min-h-[7rem]"></div>`);
+          cells.push(`<div class="${cellClass}"></div>`);
         }
 
         for (let day = 1; day <= numDays; day++) {
           const key = ymd(viewYear, viewMonth, day);
-          const events = (byDate.get(key) as { title: string; time: string }[] | undefined) || [];
+          const events = (dayEventsCache.get(key) as DayEvent[] | undefined) || [];
           const isToday = key === todayKey;
           const ring = isToday ? ' ring-2 ring-wec-cream/70' : '';
           const hasEvents = events.length > 0;
           const bg = hasEvents ? 'bg-wec-red/15 border border-wec-red/40' : 'bg-wec-warm border border-wec-cream/10';
-          const chips = events
-            .map((e) => {
-              const title = escapeHtml(e.title);
-              const time = escapeHtml(e.time);
-              return `<div class="text-[10px] sm:text-xs leading-tight bg-wec-red/70 text-wec-cream px-1.5 py-1 mb-1 truncate" title="${title} — ${time}">
-                <span class="font-semibold">${title}</span><br /><span class="opacity-80">${time}</span>
-              </div>`;
-            })
+
+          // Desktop/tablet: up to 2 chips, 3rd+ collapses into a "•••" overflow box.
+          const visibleEvents = events.slice(0, 2);
+          const overflowCount = events.length - visibleEvents.length;
+          const chips = visibleEvents
+            .map(
+              (e, i) => `
+              <button
+                data-event-index="${i}"
+                data-day-key="${key}"
+                class="avail-d-event-btn hidden sm:block w-full text-left text-[11px] leading-tight bg-wec-red/70 hover:bg-wec-red text-wec-cream px-1.5 py-1 mb-1 truncate transition-colors"
+              >
+                <span class="font-semibold">${escapeHtml(e.title)}</span><br /><span class="opacity-80">${escapeHtml(e.time)}</span>
+              </button>
+            `
+            )
             .join('');
+          const overflowBtn =
+            overflowCount > 0
+              ? `<button data-day-key="${key}" class="avail-d-agenda-btn hidden sm:flex w-full items-center justify-center gap-1 bg-wec-dark/60 hover:bg-wec-red/40 text-wec-cream text-[11px] py-1 transition-colors" aria-label="${overflowCount} more events">
+                   <span aria-hidden="true">&bull;&bull;&bull;</span><span>+${overflowCount}</span>
+                 </button>`
+              : '';
+
+          // Mobile: compact dot indicators (max 3 dots). A transparent button
+          // covers the whole cell (mobile only) so tapping anywhere on the day
+          // opens the agenda — no need to hit a tiny chip on a small screen.
+          const dotCount = Math.min(events.length, 3);
+          const mobileDots = hasEvents
+            ? `<div class="flex sm:hidden gap-0.5 mt-1">${Array.from({ length: dotCount })
+                .map(() => `<span class="w-1.5 h-1.5 rounded-full bg-wec-red"></span>`)
+                .join('')}</div>`
+            : '';
+          const mobileTapTarget = hasEvents
+            ? `<button data-day-key="${key}" class="avail-d-agenda-btn sm:hidden absolute inset-0 w-full h-full" aria-label="${events.length} events"></button>`
+            : '';
+
           cells.push(
-            `<div class="min-h-[6rem] sm:min-h-[7rem] p-1.5 sm:p-2 flex flex-col ${bg}${ring}">
-              <span class="text-sm sm:text-lg font-semibold text-wec-text mb-1">${day}</span>
-              <div class="flex-1 overflow-hidden">${chips}</div>
+            `<div class="${cellClass} relative p-1 sm:p-2 flex flex-col ${bg}${ring}">
+              <div class="flex flex-col items-center sm:items-start">
+                <span class="text-xs sm:text-lg font-semibold text-wec-text">${day}</span>
+                ${mobileDots}
+              </div>
+              <div class="hidden sm:block flex-1 overflow-hidden mt-1">${chips}${overflowBtn}</div>
+              ${mobileTapTarget}
             </div>`
           );
         }
@@ -99,10 +244,37 @@
         const totalCells = leading + numDays;
         const trailing = (7 - (totalCells % 7)) % 7;
         for (let i = 0; i < trailing; i++) {
-          cells.push(`<div class="min-h-[6rem] sm:min-h-[7rem]"></div>`);
+          cells.push(`<div class="${cellClass}"></div>`);
         }
 
         grid.innerHTML = cells.join('');
+
+        grid.querySelectorAll<HTMLButtonElement>('.avail-d-event-btn').forEach((btn) => {
+          btn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const dayKey = btn.dataset.dayKey || '';
+            const idx = Number(btn.dataset.eventIndex);
+            const events = dayEventsCache.get(dayKey) || [];
+            const e = events[idx];
+            if (!e) return;
+            openModal(eventDetailHtml(e, events.length > 1 ? dayKey : null));
+            bindModalContentHandlers();
+          });
+        });
+        grid.querySelectorAll<HTMLButtonElement>('.avail-d-agenda-btn').forEach((btn) => {
+          btn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const dayKey = btn.dataset.dayKey || '';
+            const events = dayEventsCache.get(dayKey) || [];
+            if (events.length === 0) return;
+            if (events.length === 1) {
+              openModal(eventDetailHtml(events[0], null));
+            } else {
+              openModal(dayAgendaHtml(dayKey, events));
+            }
+            bindModalContentHandlers();
+          });
+        });
       } catch {
         grid.innerHTML = '<p class="col-span-7 text-center text-wec-text/60 text-sm py-12">Availability is currently unavailable. Please call to check open dates.</p>';
       }
