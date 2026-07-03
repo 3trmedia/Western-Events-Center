@@ -17,6 +17,8 @@
 </div>
 
 <script>
+  import { ymd, daysInMonth, firstWeekdayOfMonth, dateKeyInVenueTZ } from '../lib/calendar-dates';
+
   function escapeHtml(str: string) {
     const div = document.createElement('div');
     div.textContent = str;
@@ -33,22 +35,24 @@
     const prevBtn = root.querySelector('#avail-d-prev');
     const nextBtn = root.querySelector('#avail-d-next');
 
-    const today = new Date();
-    let viewYear = today.getFullYear();
-    let viewMonth = today.getMonth(); // 0-indexed
+    const todayKey = dateKeyInVenueTZ(new Date());
+    const [todayYear, todayMonth] = todayKey.split('-').map(Number);
+    let viewYear = todayYear;
+    let viewMonth = todayMonth; // 1-12
 
     async function render() {
       if (label) {
-        label.textContent = new Date(viewYear, viewMonth, 1).toLocaleDateString('en-US', {
+        label.textContent = new Date(Date.UTC(viewYear, viewMonth - 1, 1)).toLocaleDateString('en-US', {
           month: 'long',
           year: 'numeric',
+          timeZone: 'UTC',
         });
       }
       if (!grid) return;
       grid.innerHTML = '<p class="col-span-7 text-center text-wec-text/60 text-sm py-12">Loading availability&hellip;</p>';
 
       try {
-        const res = await fetch(`/api/availability-detailed?year=${viewYear}&month=${viewMonth + 1}`);
+        const res = await fetch(`/api/availability-detailed?year=${viewYear}&month=${viewMonth}`);
         if (!res.ok) throw new Error('bad response');
         const { days } = await res.json();
 
@@ -56,50 +60,46 @@
           days.map((d: { date: string; events: { title: string; time: string }[] }) => [d.date, d.events])
         );
 
-        const firstOfMonth = new Date(viewYear, viewMonth, 1);
-        const lastOfMonth = new Date(viewYear, viewMonth + 1, 0);
-        const gridStart = new Date(firstOfMonth);
-        gridStart.setDate(gridStart.getDate() - gridStart.getDay());
-        const gridEnd = new Date(lastOfMonth);
-        gridEnd.setDate(gridEnd.getDate() + (6 - gridEnd.getDay()));
+        const leading = firstWeekdayOfMonth(viewYear, viewMonth);
+        const numDays = daysInMonth(viewYear, viewMonth);
 
         const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
         const cells: string[] = labels.map(
           (l) => `<div class="text-center text-wec-muted text-sm font-semibold uppercase pb-2">${l}</div>`
         );
 
-        const todayKey = new Date().toISOString().slice(0, 10);
-        const cursor = new Date(gridStart);
-        while (cursor <= gridEnd) {
-          const key = cursor.toISOString().slice(0, 10);
-          const inMonth = cursor.getMonth() === viewMonth;
+        for (let i = 0; i < leading; i++) {
+          cells.push(`<div class="min-h-[6rem] sm:min-h-[7rem]"></div>`);
+        }
+
+        for (let day = 1; day <= numDays; day++) {
+          const key = ymd(viewYear, viewMonth, day);
           const events = (byDate.get(key) as { title: string; time: string }[] | undefined) || [];
           const isToday = key === todayKey;
-          const dayNum = cursor.getDate();
+          const ring = isToday ? ' ring-2 ring-wec-cream/70' : '';
+          const hasEvents = events.length > 0;
+          const bg = hasEvents ? 'bg-wec-red/15 border border-wec-red/40' : 'bg-wec-warm border border-wec-cream/10';
+          const chips = events
+            .map((e) => {
+              const title = escapeHtml(e.title);
+              const time = escapeHtml(e.time);
+              return `<div class="text-[10px] sm:text-xs leading-tight bg-wec-red/70 text-wec-cream px-1.5 py-1 mb-1 truncate" title="${title} — ${time}">
+                <span class="font-semibold">${title}</span><br /><span class="opacity-80">${time}</span>
+              </div>`;
+            })
+            .join('');
+          cells.push(
+            `<div class="min-h-[6rem] sm:min-h-[7rem] p-1.5 sm:p-2 flex flex-col ${bg}${ring}">
+              <span class="text-sm sm:text-lg font-semibold text-wec-text mb-1">${day}</span>
+              <div class="flex-1 overflow-hidden">${chips}</div>
+            </div>`
+          );
+        }
 
-          if (!inMonth) {
-            cells.push(`<div class="min-h-[6rem] sm:min-h-[7rem]"></div>`);
-          } else {
-            const ring = isToday ? ' ring-2 ring-wec-cream/70' : '';
-            const hasEvents = events.length > 0;
-            const bg = hasEvents ? 'bg-wec-red/15 border border-wec-red/40' : 'bg-wec-warm border border-wec-cream/10';
-            const chips = events
-              .map((e) => {
-                const title = escapeHtml(e.title);
-                const time = escapeHtml(e.time);
-                return `<div class="text-[10px] sm:text-xs leading-tight bg-wec-red/70 text-wec-cream px-1.5 py-1 mb-1 truncate" title="${title} — ${time}">
-                  <span class="font-semibold">${title}</span><br /><span class="opacity-80">${time}</span>
-                </div>`;
-              })
-              .join('');
-            cells.push(
-              `<div class="min-h-[6rem] sm:min-h-[7rem] p-1.5 sm:p-2 flex flex-col ${bg}${ring}">
-                <span class="text-sm sm:text-lg font-semibold text-wec-text mb-1">${dayNum}</span>
-                <div class="flex-1 overflow-hidden">${chips}</div>
-              </div>`
-            );
-          }
-          cursor.setDate(cursor.getDate() + 1);
+        const totalCells = leading + numDays;
+        const trailing = (7 - (totalCells % 7)) % 7;
+        for (let i = 0; i < trailing; i++) {
+          cells.push(`<div class="min-h-[6rem] sm:min-h-[7rem]"></div>`);
         }
 
         grid.innerHTML = cells.join('');
@@ -110,16 +110,16 @@
 
     prevBtn?.addEventListener('click', () => {
       viewMonth -= 1;
-      if (viewMonth < 0) {
-        viewMonth = 11;
+      if (viewMonth < 1) {
+        viewMonth = 12;
         viewYear -= 1;
       }
       render();
     });
     nextBtn?.addEventListener('click', () => {
       viewMonth += 1;
-      if (viewMonth > 11) {
-        viewMonth = 0;
+      if (viewMonth > 12) {
+        viewMonth = 1;
         viewYear += 1;
       }
       render();

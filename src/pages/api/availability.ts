@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import ical from 'node-ical';
+import { dateKeyInVenueTZ, daysInMonth, ymd } from '../../lib/calendar-dates';
 
 export const prerender = false;
 
@@ -19,43 +20,48 @@ export const GET: APIRoute = async ({ url }) => {
   const now = new Date();
   const year = Number(url.searchParams.get('year')) || now.getFullYear();
   const month = Number(url.searchParams.get('month')) || now.getMonth() + 1; // 1-12
+  const numDays = daysInMonth(year, month);
 
-  const rangeStart = new Date(year, month - 1, 1);
-  const rangeEnd = new Date(year, month, 0, 23, 59, 59);
+  // Query a window padded a day on each side of the target month — the ICS
+  // query window is just a net to catch occurrences; which calendar day
+  // (in the venue's timezone) each occurrence actually lands on is decided
+  // below via dateKeyInVenueTZ, not by this window's boundaries.
+  const queryStart = new Date(Date.UTC(year, month - 1, 1) - 24 * 60 * 60 * 1000);
+  const queryEnd = new Date(Date.UTC(year, month - 1, numDays, 23, 59, 59) + 24 * 60 * 60 * 1000);
+
+  const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
 
   try {
     const data = await ical.async.fromURL(CALENDAR_ICS_URL);
 
     const bookedDays = new Set<string>();
 
+    const addIfInMonth = (date: Date) => {
+      const key = dateKeyInVenueTZ(date);
+      if (key.startsWith(monthPrefix)) bookedDays.add(key);
+    };
+
     for (const key in data) {
       const event = data[key];
       if (event.type !== 'VEVENT') continue;
 
       if (event.rrule) {
-        const occurrences = event.rrule.between(rangeStart, rangeEnd, true);
-        for (const date of occurrences) {
-          bookedDays.add(date.toISOString().slice(0, 10));
-        }
+        const occurrences = event.rrule.between(queryStart, queryEnd, true);
+        for (const date of occurrences) addIfInMonth(date);
       } else if (event.start) {
-        const start = new Date(event.start);
-        if (start >= rangeStart && start <= rangeEnd) {
-          bookedDays.add(start.toISOString().slice(0, 10));
-        }
+        addIfInMonth(new Date(event.start));
       }
     }
 
     // Only booked/not-booked is exposed publicly — event titles from the
     // calendar (renter names, event descriptions) are never sent to the client.
     const days = [];
-    const cursor = new Date(rangeStart);
-    while (cursor <= rangeEnd) {
-      const dateKey = cursor.toISOString().slice(0, 10);
+    for (let day = 1; day <= numDays; day++) {
+      const dateKey = ymd(year, month, day);
       days.push({
         date: dateKey,
         booked: bookedDays.has(dateKey),
       });
-      cursor.setDate(cursor.getDate() + 1);
     }
 
     return new Response(JSON.stringify({ year, month, days }), {

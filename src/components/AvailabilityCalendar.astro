@@ -21,6 +21,8 @@
 </div>
 
 <script>
+  import { ymd, daysInMonth, firstWeekdayOfMonth, dateKeyInVenueTZ } from '../lib/calendar-dates';
+
   function initSimpleCalendar() {
     const root = document.getElementById('avail-calendar-simple');
     if (!root || root.dataset.initialized === 'true') return;
@@ -31,60 +33,59 @@
     const prevBtn = root.querySelector('#avail-prev');
     const nextBtn = root.querySelector('#avail-next');
 
-    const today = new Date();
-    let viewYear = today.getFullYear();
-    let viewMonth = today.getMonth(); // 0-indexed
+    const todayKey = dateKeyInVenueTZ(new Date());
+    const [todayYear, todayMonth] = todayKey.split('-').map(Number);
+    let viewYear = todayYear;
+    let viewMonth = todayMonth; // 1-12
 
     async function render() {
       if (label) {
-        label.textContent = new Date(viewYear, viewMonth, 1).toLocaleDateString('en-US', {
+        label.textContent = new Date(Date.UTC(viewYear, viewMonth - 1, 1)).toLocaleDateString('en-US', {
           month: 'long',
           year: 'numeric',
+          timeZone: 'UTC',
         });
       }
       if (!grid) return;
       grid.innerHTML = '<p class="col-span-7 text-center text-wec-text/60 text-sm py-12">Loading availability&hellip;</p>';
 
       try {
-        const res = await fetch(`/api/availability?year=${viewYear}&month=${viewMonth + 1}`);
+        const res = await fetch(`/api/availability?year=${viewYear}&month=${viewMonth}`);
         if (!res.ok) throw new Error('bad response');
         const { days } = await res.json();
 
         const byDate = new Map(days.map((d: { date: string; booked: boolean }) => [d.date, d.booked]));
 
-        const firstOfMonth = new Date(viewYear, viewMonth, 1);
-        const lastOfMonth = new Date(viewYear, viewMonth + 1, 0);
-        const gridStart = new Date(firstOfMonth);
-        gridStart.setDate(gridStart.getDate() - gridStart.getDay());
-        const gridEnd = new Date(lastOfMonth);
-        gridEnd.setDate(gridEnd.getDate() + (6 - gridEnd.getDay()));
+        const leading = firstWeekdayOfMonth(viewYear, viewMonth);
+        const numDays = daysInMonth(viewYear, viewMonth);
 
         const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
         const cells: string[] = labels.map(
           (l) => `<div class="text-center text-wec-muted text-sm font-semibold uppercase pb-2">${l}</div>`
         );
 
-        const todayKey = new Date().toISOString().slice(0, 10);
-        const cursor = new Date(gridStart);
-        while (cursor <= gridEnd) {
-          const key = cursor.toISOString().slice(0, 10);
-          const inMonth = cursor.getMonth() === viewMonth;
+        for (let i = 0; i < leading; i++) {
+          cells.push(`<div class="aspect-square"></div>`);
+        }
+
+        for (let day = 1; day <= numDays; day++) {
+          const key = ymd(viewYear, viewMonth, day);
           const booked = byDate.get(key);
           const isToday = key === todayKey;
-          const dayNum = cursor.getDate();
-
-          if (!inMonth) {
-            cells.push(`<div class="aspect-square"></div>`);
+          const ring = isToday ? ' ring-2 ring-wec-cream/70' : '';
+          const base = 'aspect-square flex items-center justify-center text-lg sm:text-2xl font-semibold transition-colors';
+          if (booked) {
+            cells.push(`<div class="${base} bg-wec-red/70 text-wec-cream${ring}" title="Booked">${day}</div>`);
           } else {
-            const ring = isToday ? ' ring-2 ring-wec-cream/70' : '';
-            const base = 'aspect-square flex items-center justify-center text-lg sm:text-2xl font-semibold transition-colors';
-            if (booked) {
-              cells.push(`<div class="${base} bg-wec-red/70 text-wec-cream${ring}" title="Booked">${dayNum}</div>`);
-            } else {
-              cells.push(`<div class="${base} bg-wec-warm border border-wec-cream/10 text-wec-text${ring}" title="Open">${dayNum}</div>`);
-            }
+            cells.push(`<div class="${base} bg-wec-warm border border-wec-cream/10 text-wec-text${ring}" title="Open">${day}</div>`);
           }
-          cursor.setDate(cursor.getDate() + 1);
+        }
+
+        // Trailing blanks to complete the last week row.
+        const totalCells = leading + numDays;
+        const trailing = (7 - (totalCells % 7)) % 7;
+        for (let i = 0; i < trailing; i++) {
+          cells.push(`<div class="aspect-square"></div>`);
         }
 
         grid.innerHTML = cells.join('');
@@ -95,16 +96,16 @@
 
     prevBtn?.addEventListener('click', () => {
       viewMonth -= 1;
-      if (viewMonth < 0) {
-        viewMonth = 11;
+      if (viewMonth < 1) {
+        viewMonth = 12;
         viewYear -= 1;
       }
       render();
     });
     nextBtn?.addEventListener('click', () => {
       viewMonth += 1;
-      if (viewMonth > 11) {
-        viewMonth = 0;
+      if (viewMonth > 12) {
+        viewMonth = 1;
         viewYear += 1;
       }
       render();

@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import ical from 'node-ical';
+import { dateKeyInVenueTZ, daysInMonth, formatTimeInVenueTZ, ymd } from '../../lib/calendar-dates';
 
 export const prerender = false;
 
@@ -15,10 +16,6 @@ const CALENDAR_ICS_URL = import.meta.env.AVAILABILITY_ICS_URL;
 
 type DayEvent = { title: string; time: string };
 
-function formatTime(date: Date): string {
-  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-}
-
 export const GET: APIRoute = async ({ url }) => {
   if (!CALENDAR_ICS_URL) {
     return new Response(
@@ -30,21 +27,30 @@ export const GET: APIRoute = async ({ url }) => {
   const now = new Date();
   const year = Number(url.searchParams.get('year')) || now.getFullYear();
   const month = Number(url.searchParams.get('month')) || now.getMonth() + 1; // 1-12
+  const numDays = daysInMonth(year, month);
 
-  const rangeStart = new Date(year, month - 1, 1);
-  const rangeEnd = new Date(year, month, 0, 23, 59, 59);
+  // See availability.ts — padded query net, actual day bucketing happens via
+  // dateKeyInVenueTZ below, not via these boundaries.
+  const queryStart = new Date(Date.UTC(year, month - 1, 1) - 24 * 60 * 60 * 1000);
+  const queryEnd = new Date(Date.UTC(year, month - 1, numDays, 23, 59, 59) + 24 * 60 * 60 * 1000);
+
+  const monthPrefix = `${year}-${String(month).padStart(2, '0')}`;
 
   try {
     const data = await ical.async.fromURL(CALENDAR_ICS_URL);
 
     const eventsByDate = new Map<string, DayEvent[]>();
 
-    const addEvent = (dateKey: string, title: string, start: Date, end: Date | null, allDay: boolean) => {
+    const addEvent = (start: Date, title: string, end: Date | null, allDay: boolean) => {
+      const dateKey = dateKeyInVenueTZ(start);
+      if (!dateKey.startsWith(monthPrefix)) return;
+
       const time = allDay
         ? 'All Day'
         : end
-          ? `${formatTime(start)} - ${formatTime(end)}`
-          : formatTime(start);
+          ? `${formatTimeInVenueTZ(start)} - ${formatTimeInVenueTZ(end)}`
+          : formatTimeInVenueTZ(start);
+
       if (!eventsByDate.has(dateKey)) eventsByDate.set(dateKey, []);
       eventsByDate.get(dateKey)!.push({ title, time });
     };
@@ -57,31 +63,27 @@ export const GET: APIRoute = async ({ url }) => {
       const allDay = event.datetype === 'date';
 
       if (event.rrule) {
-        const occurrences = event.rrule.between(rangeStart, rangeEnd, true);
+        const occurrences = event.rrule.between(queryStart, queryEnd, true);
         const duration =
           event.start && event.end ? new Date(event.end).getTime() - new Date(event.start).getTime() : 0;
         for (const occStart of occurrences) {
           const occEnd = duration ? new Date(occStart.getTime() + duration) : null;
-          addEvent(occStart.toISOString().slice(0, 10), title, occStart, occEnd, allDay);
+          addEvent(occStart, title, occEnd, allDay);
         }
       } else if (event.start) {
         const start = new Date(event.start);
-        if (start >= rangeStart && start <= rangeEnd) {
-          const end = event.end ? new Date(event.end) : null;
-          addEvent(start.toISOString().slice(0, 10), title, start, end, allDay);
-        }
+        const end = event.end ? new Date(event.end) : null;
+        addEvent(start, title, end, allDay);
       }
     }
 
     const days = [];
-    const cursor = new Date(rangeStart);
-    while (cursor <= rangeEnd) {
-      const dateKey = cursor.toISOString().slice(0, 10);
+    for (let day = 1; day <= numDays; day++) {
+      const dateKey = ymd(year, month, day);
       days.push({
         date: dateKey,
         events: eventsByDate.get(dateKey) || [],
       });
-      cursor.setDate(cursor.getDate() + 1);
     }
 
     return new Response(JSON.stringify({ year, month, days }), {
