@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import AvailabilityCalendar from '../components/AvailabilityCalendar.astro';
 ---
 
 <Layout
@@ -207,6 +208,18 @@ import Layout from '../layouts/Layout.astro';
           </div>
         ))}
       </div>
+    </div>
+  </section>
+
+  <!-- AVAILABILITY -->
+  <section class="py-20 lg:py-28 bg-wec-dark">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-14">
+        <p class="text-wec-red font-semibold text-sm tracking-[0.25em] uppercase mb-3">Next 3 Weeks</p>
+        <h2 class="font-display text-4xl lg:text-5xl text-wec-cream mb-4">Check Availability</h2>
+        <p class="text-wec-text/60 max-w-xl mx-auto">See what's open before you reach out. Booked days are shown in red.</p>
+      </div>
+      <AvailabilityCalendar />
     </div>
   </section>
 

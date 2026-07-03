@@ -13,8 +13,10 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "3.7.3",
+    "@astrojs/vercel": "^10.0.8",
     "@tailwindcss/vite": "4.3.0",
     "astro": "6.4.6",
+    "node-ical": "^0.26.1",
     "tailwindcss": "4.3.0"
   },
   "overrides": {
